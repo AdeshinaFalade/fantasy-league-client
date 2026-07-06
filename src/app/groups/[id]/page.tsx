@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Modal } from '@/components/ui/Modal';
 import { api } from '@/lib/api';
-import type { Event, Group, Leaderboard, Rule, User } from '@/types';
+import type { Event, Group, Leaderboard, User } from '@/types';
 
 export default function GroupDetailPage() {
     const params = useParams<{ id: string }>();
@@ -20,7 +20,6 @@ export default function GroupDetailPage() {
 
     const [group, setGroup] = useState<Group | null>(null);
     const [events, setEvents] = useState<Event[]>([]);
-    const [rules, setRules] = useState<Rule[]>([]);
     const [leaderboard, setLeaderboard] = useState<Leaderboard | null>(null);
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -68,13 +67,7 @@ export default function GroupDetailPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [groupId]);
 
-    useEffect(() => {
-        if (!events.length) {
-            setRules([]);
-            return;
-        }
-        api.rules.byEvent(events[0].id).then(setRules).catch(() => setRules([]));
-    }, [events]);
+
 
     const handleDeleteGroup = async () => {
         if (!confirm('WARNING: Are you sure you want to delete this group? This action is permanent.')) {
@@ -192,39 +185,6 @@ export default function GroupDetailPage() {
                     )}
                 </Section>
 
-                {events.length > 0 && (
-                    <Section title={`Rules: ${events[0].name}`} description="Scoring rules for predictions in the current event.">
-                        {rules.length ? (
-                            <div className="space-y-2 text-sm">
-                                {rules.map((rule) => (
-                                    <div key={rule.id} className="rounded-xl border border-slate-200 px-4 py-3 bg-slate-50">
-                                        <span className="font-medium text-slate-900">{rule.player}</span> should get {rule.metric}{' '}
-                                        <span className="font-semibold">{rule.condition}</span> {Number(rule.threshold)}
-                                        <span className="float-right font-bold text-blue-600">+{rule.score} pts</span>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <EmptyState
-                                title="No rules loaded"
-                                description="Open this event to add or manage rules."
-                                href={`/events/${events[0].id}`}
-                                label="Manage rules"
-                            />
-                        )}
-                    </Section>
-                )}
-
-                <Section title="Quick Actions">
-                    <div className="flex flex-wrap gap-2 text-sm">
-                        <Link href="/dashboard" className="rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50">
-                            Dashboard
-                        </Link>
-                        <Link href="/profile" className="rounded-lg border border-slate-200 px-3 py-2 hover:bg-slate-50">
-                            My Profile
-                        </Link>
-                    </div>
-                </Section>
             </div>
 
             {/* Event Creation Modal */}

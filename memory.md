@@ -1,6 +1,6 @@
 # Memory — Fantasy League Client & Server Updates
 
-Last updated: 2026-07-06T11:53:00+01:00
+Last updated: 2026-07-06T12:04:00+01:00
 
 ## What was built
 - **Authentication State Storage**: Configured `login` and `register` pages to store the backend's root-level `token` response.
@@ -9,6 +9,9 @@ Last updated: 2026-07-06T11:53:00+01:00
 - **Event Creation & Postponement**: 
   - Built an event creation form modal on the group detail page for admins. Made the "Starts At" field **required** to prevent immediate activation upon creation.
   - Implemented an **"Edit Event" details modal** for admins to change event properties (such as postponing the `startsAt` date to a future time), which automatically re-opens predictions for group members even if the original start time has elapsed.
+- **Group Overview Dashboard Cleanup**:
+  - Removed the confusing, hardcoded rules display of the first event in the bottom-left.
+  - Removed the redundant quick actions panel, creating a clean dashboard layout (Events on the left, Leaderboard on the right).
 - **Interactive Tri-state Predictions**: 
   - Added a **"Pass"** choice in the prediction form. User selections default to unselected (`null`) and any skipped rules are omitted from the array sent to the backend, preventing neutral default predictions from being evaluated as incorrect.
 - **Prediction Scorecards with Match Results**: 
