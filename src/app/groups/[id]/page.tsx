@@ -249,11 +249,12 @@ export default function GroupDetailPage() {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-1">Starts At (Optional)</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Starts At</label>
                         <Input
                             type="datetime-local"
                             value={eventStartsAt}
                             onChange={(e) => setEventStartsAt(e.target.value)}
+                            required
                         />
                     </div>
                     {modalError ? <p className="text-sm text-red-600">{modalError}</p> : null}
