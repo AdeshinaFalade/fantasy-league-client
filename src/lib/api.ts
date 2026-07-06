@@ -142,6 +142,10 @@ export const api = {
             method: 'PATCH',
             body: JSON.stringify({ status }),
         }),
+        update: (id: string, dto: Partial<CreateEventDto>) => request<Event>(`/events/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(dto),
+        }),
         recordResult: (dto: RecordResultDto) => request<Result>('/events/result', {
             method: 'POST',
             body: JSON.stringify(dto),

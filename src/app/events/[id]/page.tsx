@@ -8,6 +8,7 @@ import { PageShell } from '@/components/page-shell';
 import { EmptyState, Section } from '@/components/route-helpers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Modal } from '@/components/ui/Modal';
 import { api } from '@/lib/api';
 import type { Event, Prediction, Rule, User, RuleCondition } from '@/types';
 import { STATUS_LABELS } from '@/utils/format';
@@ -54,6 +55,51 @@ export default function EventDetailPage() {
     // Dynamic result inputs state
     const [resultInputs, setResultInputs] = useState<Record<string, Record<string, number>>>({});
     const [submittingResult, setSubmittingResult] = useState(false);
+
+    // Edit event modal state
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editEventName, setEditEventName] = useState('');
+    const [editEventDesc, setEditEventDesc] = useState('');
+    const [editEventStartsAt, setEditEventStartsAt] = useState('');
+    const [editModalError, setEditModalError] = useState('');
+    const [editModalLoading, setEditModalLoading] = useState(false);
+
+    const openEditModal = () => {
+        if (!event) return;
+        setEditEventName(event.name);
+        setEditEventDesc(event.description ?? '');
+        if (event.startsAt) {
+            const date = new Date(event.startsAt);
+            const tzoffset = date.getTimezoneOffset() * 60000;
+            const localISOTime = (new Date(date.getTime() - tzoffset)).toISOString().slice(0, 16);
+            setEditEventStartsAt(localISOTime);
+        } else {
+            setEditEventStartsAt('');
+        }
+        setEditModalError('');
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateEvent = async (e: FormEvent) => {
+        e.preventDefault();
+        setEditModalLoading(true);
+        setEditModalError('');
+        try {
+            await api.events.update(eventId, {
+                name: editEventName,
+                description: editEventDesc,
+                startsAt: editEventStartsAt || undefined,
+            });
+            const eventData = await api.events.byId(eventId);
+            setEvent(eventData);
+            setIsEditModalOpen(false);
+            showMessage('Event updated successfully.');
+        } catch (err) {
+            setEditModalError(err instanceof Error ? err.message : 'Failed to update event');
+        } finally {
+            setEditModalLoading(false);
+        }
+    };
 
     // Find current user's prediction
     const myPrediction = useMemo(() => {
@@ -249,6 +295,11 @@ export default function EventDetailPage() {
             description={event ? `${event.description || 'No description provided.'}` : 'Loading event data.'}
             actions={
                 <div className="flex gap-2">
+                    {isAdmin && (
+                        <Button variant="outline" size="sm" onClick={openEditModal}>
+                            Edit Event
+                        </Button>
+                    )}
                     <Link href={`/groups/${event?.groupId || ''}`} className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm hover:bg-slate-50">
                         Back to Group
                     </Link>
@@ -623,6 +674,49 @@ export default function EventDetailPage() {
             ) : (
                 <EmptyState title="Event Not Found" description="The event ID does not match any current record." />
             )}
+
+            {/* Edit Event Details Modal */}
+            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Event Details">
+                <form onSubmit={handleUpdateEvent} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Event Name</label>
+                        <Input
+                            value={editEventName}
+                            onChange={(e) => setEditEventName(e.target.value)}
+                            placeholder="e.g. Gameweek 1"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
+                        <textarea
+                            className="w-full rounded-lg border border-slate-200 p-2.5 text-sm outline-none focus-visible:border-slate-400"
+                            value={editEventDesc}
+                            onChange={(e) => setEditEventDesc(e.target.value)}
+                            placeholder="e.g. Champions League Predictions"
+                            rows={3}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-1">Starts At</label>
+                        <Input
+                            type="datetime-local"
+                            value={editEventStartsAt}
+                            onChange={(e) => setEditEventStartsAt(e.target.value)}
+                            required
+                        />
+                    </div>
+                    {editModalError ? <p className="text-sm text-red-600">{editModalError}</p> : null}
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button type="button" variant="outline" onClick={() => setIsEditModalOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit" disabled={editModalLoading}>
+                            {editModalLoading ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                    </div>
+                </form>
+            </Modal>
         </PageShell>
     );
 }
