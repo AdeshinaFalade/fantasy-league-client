@@ -12,6 +12,18 @@ import { api } from '@/lib/api';
 import type { Event, Prediction, Rule, User, RuleCondition } from '@/types';
 import { STATUS_LABELS } from '@/utils/format';
 
+function evaluateCondition(condition: string, value: number, threshold: number): boolean {
+    switch (condition) {
+        case 'GT': return value > threshold;
+        case 'LT': return value < threshold;
+        case 'EQ': return value === threshold;
+        case 'GTE': return value >= threshold;
+        case 'LTE': return value <= threshold;
+        case 'NEQ': return value !== threshold;
+        default: return false;
+    }
+}
+
 export default function EventDetailPage() {
     const params = useParams<{ id: string }>();
     const eventId = useMemo(() => params.id, [params.id]);
@@ -36,7 +48,7 @@ export default function EventDetailPage() {
     const [submittingRule, setSubmittingRule] = useState(false);
 
     // Prediction form state
-    const [predictionSelections, setPredictionSelections] = useState<Record<string, boolean>>({});
+    const [predictionSelections, setPredictionSelections] = useState<Record<string, boolean | null>>({});
     const [submittingPrediction, setSubmittingPrediction] = useState(false);
 
     // Dynamic result inputs state
@@ -114,15 +126,22 @@ export default function EventDetailPage() {
         setResultInputs(initialInputs);
     }, [uniquePlayerMetrics]);
 
-    // Initialize prediction choices to false for all rules if not already predicted
+    // Initialize prediction choices to null for all rules if not already predicted
     useEffect(() => {
         if (myPrediction?.selections) {
-            setPredictionSelections(myPrediction.selections);
+            const mapped: Record<string, boolean | null> = {};
+            const selectionsArray = Array.isArray(myPrediction.selections)
+                ? myPrediction.selections
+                : [];
+            for (const sel of selectionsArray) {
+                mapped[sel.ruleId] = sel.value;
+            }
+            setPredictionSelections(mapped);
             return;
         }
-        const initialSelections: Record<string, boolean> = {};
+        const initialSelections: Record<string, boolean | null> = {};
         for (const rule of rules) {
-            initialSelections[rule.id] = false;
+            initialSelections[rule.id] = null;
         }
         setPredictionSelections(initialSelections);
     }, [rules, myPrediction]);
@@ -183,10 +202,17 @@ export default function EventDetailPage() {
         if (!event) return;
         setSubmittingPrediction(true);
         try {
+            const selections = Object.entries(predictionSelections)
+                .filter(([, value]) => value !== null && value !== undefined)
+                .map(([ruleId, value]) => ({
+                    ruleId,
+                    value: value as boolean,
+                }));
+
             await api.predictions.create({
                 eventId,
                 groupId: event.groupId,
-                selections: predictionSelections,
+                selections,
             });
             showMessage('Prediction submitted successfully.');
             // Reload predictions
@@ -390,15 +416,81 @@ export default function EventDetailPage() {
                                             <p className="font-semibold">Prediction Submitted Successfully!</p>
                                             <p className="text-xs text-blue-600 mt-1">Submitted at: {new Date(myPrediction.submittedAt).toLocaleString()}</p>
                                         </div>
-                                        <div className="space-y-2">
+                                        <div className="space-y-3">
                                             {rules.map((rule) => {
-                                                const choice = myPrediction.selections[rule.id];
+                                                const selectionsArray = Array.isArray(myPrediction.selections)
+                                                    ? myPrediction.selections
+                                                    : [];
+                                                const selection = selectionsArray.find((s) => s.ruleId === rule.id);
+                                                const choice = selection?.value; // true, false, or undefined
+
+                                                // If result is ready, evaluate score
+                                                const resultObj = event.results?.[0];
+                                                const actualValue = resultObj?.payload?.[rule.player]?.[rule.metric];
+                                                let conditionMet: boolean | null = null;
+                                                if (actualValue !== undefined && actualValue !== null) {
+                                                    conditionMet = evaluateCondition(rule.condition, Number(actualValue), Number(rule.threshold));
+                                                }
+
+                                                const isCorrect = selection !== undefined && conditionMet !== null && choice === conditionMet;
+                                                const isIncorrect = selection !== undefined && conditionMet !== null && choice !== conditionMet;
+
                                                 return (
-                                                    <div key={rule.id} className="flex items-center justify-between rounded-lg border border-slate-200 p-3 bg-white text-sm">
-                                                        <span>{rule.player} {rule.metric}</span>
-                                                        <span className={`font-semibold rounded px-2.5 py-0.5 text-xs ${choice ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                            {choice ? 'Yes' : 'No'}
-                                                        </span>
+                                                    <div key={rule.id} className="rounded-xl border border-slate-200 p-4 bg-white text-sm space-y-3 shadow-sm">
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <span className="font-semibold text-slate-900">{rule.player}</span>
+                                                                <span className="text-slate-600"> {rule.metric} </span>
+                                                                <span className="font-mono text-xs bg-slate-100 px-1 py-0.5 rounded">{rule.condition}</span>
+                                                                <span className="font-bold text-slate-900"> {Number(rule.threshold)}</span>
+                                                            </div>
+                                                            <span className="font-semibold text-slate-500">+{rule.score} pts</span>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-2 gap-2 text-xs border-t border-slate-100 pt-3">
+                                                            <div>
+                                                                <span className="text-slate-400">Your Prediction:</span>
+                                                                <span className={`ml-1.5 font-bold uppercase ${
+                                                                    choice === true ? 'text-green-600' :
+                                                                    choice === false ? 'text-red-600' :
+                                                                    'text-slate-500'
+                                                                }`}>
+                                                                    {choice === true ? 'Yes' : choice === false ? 'No' : 'Passed'}
+                                                                </span>
+                                                            </div>
+                                                            {actualValue !== undefined && actualValue !== null ? (
+                                                                <div>
+                                                                    <span className="text-slate-400">Actual Value:</span>
+                                                                    <span className="ml-1.5 font-bold text-slate-800">
+                                                                        {actualValue} ({conditionMet ? 'Yes' : 'No'})
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <div>
+                                                                    <span className="text-slate-400">Actual Value:</span>
+                                                                    <span className="ml-1.5 font-medium text-slate-400 italic">Pending</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {conditionMet !== null && (
+                                                            <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs">
+                                                                <span className="text-slate-400">Result:</span>
+                                                                {isCorrect ? (
+                                                                    <span className="font-bold text-green-700 bg-green-50 px-2.5 py-0.5 rounded-full border border-green-200">
+                                                                        ✅ Correct (+{rule.score} pts)
+                                                                    </span>
+                                                                ) : isIncorrect ? (
+                                                                    <span className="font-bold text-red-700 bg-red-50 px-2.5 py-0.5 rounded-full border border-red-200">
+                                                                        ❌ Incorrect (0 pts)
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="font-bold text-slate-600 bg-slate-50 px-2.5 py-0.5 rounded-full border border-slate-200">
+                                                                        ➖ Passed (0 pts)
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
                                             })}
@@ -419,7 +511,7 @@ export default function EventDetailPage() {
                                                                 onClick={() => setPredictionSelections((curr) => ({ ...curr, [rule.id]: true }))}
                                                                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold border transition ${
                                                                     predictionSelections[rule.id] === true
-                                                                        ? 'bg-blue-600 text-white border-blue-600'
+                                                                        ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
                                                                         : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                                                                 }`}
                                                             >
@@ -430,11 +522,22 @@ export default function EventDetailPage() {
                                                                 onClick={() => setPredictionSelections((curr) => ({ ...curr, [rule.id]: false }))}
                                                                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold border transition ${
                                                                     predictionSelections[rule.id] === false
-                                                                        ? 'bg-red-600 text-white border-red-600'
+                                                                        ? 'bg-red-600 text-white border-red-600 font-bold shadow-sm'
                                                                         : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                                                                 }`}
                                                             >
                                                                 No
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setPredictionSelections((curr) => ({ ...curr, [rule.id]: null }))}
+                                                                className={`rounded-lg px-3 py-1.5 text-xs font-semibold border transition ${
+                                                                    predictionSelections[rule.id] === null || predictionSelections[rule.id] === undefined
+                                                                        ? 'bg-slate-600 text-white border-slate-600 font-bold shadow-sm'
+                                                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                                                }`}
+                                                            >
+                                                                Pass
                                                             </button>
                                                         </div>
                                                     </div>

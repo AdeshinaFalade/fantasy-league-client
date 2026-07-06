@@ -54,6 +54,7 @@ export interface Event {
   updatedAt: string;
   createdBy?: User;
   rules?: Rule[];
+  results?: Result[];
 }
 
 export interface Rule {
@@ -74,7 +75,7 @@ export interface Prediction {
   eventId: string;
   groupId: string;
   userId: string;
-  selections: Record<string, boolean>;
+  selections: Array<{ ruleId: string; value: boolean }>;
   status: PredictionStatus;
   submittedAt: string;
   createdAt: string;
@@ -85,7 +86,7 @@ export interface Prediction {
 export interface Result {
   id: string;
   eventId: string;
-  payload: Record<string, number>;
+  payload: Record<string, Record<string, number>>;
   recordedById: string;
   recordedAt: string;
   createdAt: string;
@@ -168,7 +169,7 @@ export interface CreateRuleDto {
 export interface CreatePredictionDto {
   eventId: string;
   groupId: string;
-  selections: Record<string, boolean>;
+  selections: Array<{ ruleId: string; value: boolean }>;
 }
 
 export interface RecordResultDto {
