@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import { api } from '@/lib/api';
@@ -64,6 +64,7 @@ export function PageShell({
     anonymousOnly = false,
 }: ShellProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const [user, setUser] = useState<SessionUser | null>(() => tokenStorage.getUser<SessionUser>());
     const [loading, setLoading] = useState(true);
 
@@ -161,15 +162,23 @@ export function PageShell({
     };
 
     return (
-        <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.08),_transparent_40%),linear-gradient(180deg,_#f8fafc_0%,_#ffffff_35%,_#f8fafc_100%)] text-slate-900">
+        <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.06),_transparent_40%),linear-gradient(180deg,_#f8fafc_0%,_#ffffff_35%,_#f8fafc_100%)] text-slate-900">
             <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
                 <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-                    <Link href="/dashboard" className="text-lg font-semibold tracking-tight">
+                    <Link href="/dashboard" className="text-lg font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600 hover:opacity-90 transition">
                         Fantasy League
                     </Link>
-                    <nav className="hidden gap-4 text-sm text-slate-600 md:flex">
+                    <nav className="hidden gap-5 text-sm md:flex">
                         {nav.map(([label, href]) => (
-                            <Link key={label} href={href} className="hover:text-slate-900">
+                            <Link 
+                                key={label} 
+                                href={href} 
+                                className={`transition-colors duration-200 hover:text-slate-900 ${
+                                    pathname === href 
+                                        ? 'text-indigo-600 font-semibold' 
+                                        : 'text-slate-600'
+                                }`}
+                            >
                                 {label}
                             </Link>
                         ))}
@@ -184,17 +193,17 @@ export function PageShell({
                                 <button
                                     type="button"
                                     onClick={signOut}
-                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50"
+                                    className="rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition"
                                 >
                                     Sign out
                                 </button>
                             </>
                         ) : (
                             <>
-                                <Link href="/login" className="rounded-lg border border-slate-200 px-3 py-2 text-sm hover:bg-slate-50">
+                                <Link href="/login" className="rounded-lg border border-slate-200 bg-white hover:bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition">
                                     Login
                                 </Link>
-                                <Link href="/register" className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-700">
+                                <Link href="/register" className="rounded-lg bg-indigo-600 hover:bg-indigo-700 px-3.5 py-2 text-sm font-semibold text-white transition shadow-sm shadow-indigo-100">
                                     Register
                                 </Link>
                             </>

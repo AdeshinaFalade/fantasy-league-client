@@ -6,12 +6,12 @@ type ButtonVariant = 'default' | 'primary' | 'secondary' | 'outline' | 'ghost' |
 type ButtonSize = 'default' | 'sm' | 'icon-sm';
 
 const variantClasses: Record<ButtonVariant, string> = {
-  default: 'bg-slate-900 text-white hover:bg-slate-700',
-  primary: 'bg-slate-900 text-white hover:bg-slate-700',
-  secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200',
-  outline: 'border border-slate-200 bg-transparent hover:bg-slate-50',
-  ghost: 'bg-transparent hover:bg-slate-100',
-  destructive: 'bg-red-600 text-white hover:bg-red-500',
+  default: 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-100 transition-colors',
+  primary: 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm shadow-indigo-100 transition-colors',
+  secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 border border-slate-200/50 transition-colors',
+  outline: 'border border-slate-200 bg-transparent hover:bg-slate-50 transition-colors',
+  ghost: 'bg-transparent hover:bg-slate-100 transition-colors',
+  destructive: 'bg-red-600 text-white hover:bg-red-500 transition-colors',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {

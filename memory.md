@@ -1,6 +1,6 @@
 # Memory — Fantasy League Client & Server Updates
 
-Last updated: 2026-07-06T12:04:00+01:00
+Last updated: 2026-07-06T12:07:00+01:00
 
 ## What was built
 - **Authentication State Storage**: Configured `login` and `register` pages to store the backend's root-level `token` response.
@@ -12,6 +12,11 @@ Last updated: 2026-07-06T12:04:00+01:00
 - **Group Overview Dashboard Cleanup**:
   - Removed the confusing, hardcoded rules display of the first event in the bottom-left.
   - Removed the redundant quick actions panel, creating a clean dashboard layout (Events on the left, Leaderboard on the right).
+- **Aesthetics & Brand Identity**:
+  - Replaced the landing page description with an engaging, user-facing pitch: *"Predict matches, define custom rules, and climb the leaderboard in the ultimate custom fantasy sports competition."*
+  - Styled primary buttons and interactive elements with a modern Indigo and Violet color palette (`bg-indigo-600` hover `bg-indigo-700`).
+  - Added active navigation path highlighting using Next.js `usePathname` in the PageShell header.
+  - Injected subtle indigo radial gradients to give the background of the landing page and page wrapper a modern, polished look without being overly busy.
 - **Interactive Tri-state Predictions**: 
   - Added a **"Pass"** choice in the prediction form. User selections default to unselected (`null`) and any skipped rules are omitted from the array sent to the backend, preventing neutral default predictions from being evaluated as incorrect.
 - **Prediction Scorecards with Match Results**: 
