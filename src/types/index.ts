@@ -105,7 +105,7 @@ export interface Score {
 export interface LeaderboardEntry {
   userId: string;
   name: string;
-  totalScore: number;
+  score: number;
   rank: number;
 }
 

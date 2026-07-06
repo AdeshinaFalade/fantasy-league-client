@@ -183,7 +183,7 @@ export default function GroupDetailPage() {
                                     <span className="font-medium">
                                         #{entry.rank} {entry.name} {entry.userId === currentUser?.id ? '(You)' : ''}
                                     </span>
-                                    <span className="font-bold text-slate-900">{entry.totalScore} pts</span>
+                                    <span className="font-bold text-slate-900">{entry.score} pts</span>
                                 </div>
                             ))}
                         </div>
