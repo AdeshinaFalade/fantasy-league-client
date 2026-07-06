@@ -67,6 +67,17 @@ export function PageShell({
     const [user, setUser] = useState<SessionUser | null>(() => tokenStorage.getUser<SessionUser>());
     const [loading, setLoading] = useState(true);
 
+    const nav = useMemo(
+        () => [
+            ['Dashboard', '/dashboard'],
+            ['Groups', '/groups'],
+            ['Create', '/groups/new'],
+            ['Join', '/groups/join'],
+            ['Profile', '/profile'],
+        ],
+        [],
+    );
+
     useEffect(() => {
         let active = true;
 
@@ -121,16 +132,23 @@ export function PageShell({
         );
     }
 
-    const nav = useMemo(
-        () => [
-            ['Dashboard', '/dashboard'],
-            ['Groups', '/groups'],
-            ['Create', '/groups/new'],
-            ['Join', '/groups/join'],
-            ['Profile', '/profile'],
-        ],
-        [],
-    );
+    if (requireAuth && !user) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-slate-50">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-900 border-t-transparent" />
+            </div>
+        );
+    }
+
+    if (anonymousOnly && user) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-slate-50">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-900 border-t-transparent" />
+            </div>
+        );
+    }
+
+
 
     const signOut = async () => {
         try {

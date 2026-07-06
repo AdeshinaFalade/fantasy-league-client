@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 import { PageShell } from '@/components/page-shell';
@@ -9,13 +9,12 @@ import { EmptyState, Section } from '@/components/route-helpers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api';
-import type { Event, Prediction, Rule, User } from '@/types';
+import type { Event, Prediction, Rule, User, RuleCondition } from '@/types';
 import { STATUS_LABELS } from '@/utils/format';
 
 export default function EventDetailPage() {
     const params = useParams<{ id: string }>();
     const eventId = useMemo(() => params.id, [params.id]);
-    const router = useRouter();
 
     const [event, setEvent] = useState<Event | null>(null);
     const [rules, setRules] = useState<Rule[]>([]);
@@ -100,6 +99,7 @@ export default function EventDetailPage() {
 
     useEffect(() => {
         loadData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [eventId]);
 
     // Initialize result inputs structure when unique combinations change
@@ -141,7 +141,7 @@ export default function EventDetailPage() {
                 eventId,
                 player: ruleForm.player,
                 metric: ruleForm.metric,
-                condition: ruleForm.condition as any,
+                condition: ruleForm.condition as RuleCondition,
                 threshold: Number(ruleForm.threshold),
                 score: Number(ruleForm.score),
             });

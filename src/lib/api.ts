@@ -6,6 +6,7 @@ import type {
     CreateRuleDto,
     Event,
     Group,
+    GroupMember,
     JoinGroupDto,
     Leaderboard,
     LoginDto,
@@ -43,6 +44,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
         ...init,
         headers,
     });
+
+    if (response.ok) {
+        const authToken = response.headers.get('set-auth-token');
+        if (authToken) {
+            tokenStorage.setToken(authToken);
+        }
+    }
 
     if (!response.ok) {
         const fallback = `${response.status} ${response.statusText}`;

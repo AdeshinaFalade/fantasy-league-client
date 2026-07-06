@@ -65,6 +65,7 @@ export default function GroupDetailPage() {
 
     useEffect(() => {
         loadData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [groupId]);
 
     useEffect(() => {

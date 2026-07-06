@@ -125,7 +125,7 @@ export interface AuthSession {
 
 export interface AuthResponse {
   user: User;
-  session: AuthSession;
+  token: string;
 }
 
 // ─── DTOs ─────────────────────────────────────────────────────────────────────
@@ -173,7 +173,7 @@ export interface CreatePredictionDto {
 
 export interface RecordResultDto {
   eventId: string;
-  payload: Record<string, number>;
+  payload: Record<string, Record<string, number>>;
 }
 
 export interface UpdateMemberRoleDto {

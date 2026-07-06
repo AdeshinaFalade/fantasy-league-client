@@ -24,8 +24,8 @@ export default function RegisterPage() {
 
         try {
             const res = await api.auth.register({ name, email, password });
-            if (res?.session?.token) {
-                tokenStorage.setToken(res.session.token);
+            if (res?.token) {
+                tokenStorage.setToken(res.token);
             }
             if (res?.user) {
                 tokenStorage.setUser(res.user);

@@ -23,8 +23,8 @@ export default function LoginPage() {
 
         try {
             const res = await api.auth.login({ email, password });
-            if (res?.session?.token) {
-                tokenStorage.setToken(res.session.token);
+            if (res?.token) {
+                tokenStorage.setToken(res.token);
             }
             if (res?.user) {
                 tokenStorage.setUser(res.user);

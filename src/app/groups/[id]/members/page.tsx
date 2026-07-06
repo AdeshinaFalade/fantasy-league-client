@@ -48,6 +48,7 @@ export default function GroupMembersPage() {
 
     useEffect(() => {
         loadData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [groupId]);
 
     const toggleRole = async (member: GroupMember) => {
