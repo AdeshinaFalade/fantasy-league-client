@@ -38,7 +38,7 @@ export default function LoginPage() {
     };
 
     return (
-        <PageShell title="Login" description="Sign in with your backend account." requireAuth={false} anonymousOnly={true}>
+        <PageShell title="Login" description="Welcome back! Sign in to access your dashboard and active fantasy groups." requireAuth={false} anonymousOnly={true}>
             <form onSubmit={submit} className="max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <Input value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Email" type="email" required />
                 <Input value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Password" type="password" required />

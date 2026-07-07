@@ -57,16 +57,21 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
         let message = fallback;
 
         try {
-            const payload = (await response.json()) as { message?: string | string[] };
+            const clone = response.clone();
+            const payload = (await clone.json()) as { message?: string | string[] };
             if (Array.isArray(payload.message)) {
                 message = payload.message.join(', ');
             } else if (payload.message) {
                 message = payload.message;
             }
         } catch {
-            const text = await response.text();
-            if (text) {
-                message = text;
+            try {
+                const text = await response.text();
+                if (text) {
+                    message = text;
+                }
+            } catch {
+                // Ignore secondary body parsing failures, use default fallback
             }
         }
 

@@ -12,6 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Modal } from '@/components/ui/Modal';
 import { api } from '@/lib/api';
 import type { Event, Group, Leaderboard, User } from '@/types';
+import { io } from 'socket.io-client';
+import { tokenStorage } from '@/utils/token';
 
 export default function GroupDetailPage() {
     const params = useParams<{ id: string }>();
@@ -65,6 +67,31 @@ export default function GroupDetailPage() {
     useEffect(() => {
         loadData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [groupId]);
+
+    useEffect(() => {
+        if (!groupId) return;
+
+        const token = tokenStorage.getToken();
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? 'http://localhost:3000';
+        const socket = io(backendUrl, {
+            auth: {
+                token,
+            },
+            transports: ['websocket'],
+        });
+
+        socket.on('connect', () => {
+            socket.emit('joinGroup', { groupId });
+        });
+
+        socket.on('leaderboardUpdated', (newLeaderboard: Leaderboard) => {
+            setLeaderboard(newLeaderboard);
+        });
+
+        return () => {
+            socket.disconnect();
+        };
     }, [groupId]);
 
 

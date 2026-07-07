@@ -1,40 +1,35 @@
-# Memory — Fantasy League Client & Server Updates
+# Memory — Project Report Drafting & WebSocket Real-time Standings
 
-Last updated: 2026-07-06T12:07:00+01:00
+Last updated: 2026-07-07T13:17:00+01:00
 
 ## What was built
-- **Authentication State Storage**: Configured `login` and `register` pages to store the backend's root-level `token` response.
-- **Route Guarding**: Implemented page-shell level redirects. Protected pages redirect to `/login` if unauthenticated, and anonymous-only pages redirect to `/dashboard` if authenticated. Prevented children mounting before verification completes.
-- **Group Member Administration**: Created members dashboard page supporting promote/demote (role toggle) and remove actions for group admins. Added a group delete button.
-- **Event Creation & Postponement**: 
-  - Built an event creation form modal on the group detail page for admins. Made the "Starts At" field **required** to prevent immediate activation upon creation.
-  - Implemented an **"Edit Event" details modal** for admins to change event properties (such as postponing the `startsAt` date to a future time), which automatically re-opens predictions for group members even if the original start time has elapsed.
-- **Group Overview Dashboard Cleanup**:
-  - Removed the confusing, hardcoded rules display of the first event in the bottom-left.
-  - Removed the redundant quick actions panel, creating a clean dashboard layout (Events on the left, Leaderboard on the right).
-- **Aesthetics & Brand Identity**:
-  - Replaced the landing page description with an engaging, user-facing pitch: *"Predict matches, define custom rules, and climb the leaderboard in the ultimate custom fantasy sports competition."*
-  - Styled primary buttons and interactive elements with a modern Indigo and Violet color palette (`bg-indigo-600` hover `bg-indigo-700`).
-  - Added active navigation path highlighting using Next.js `usePathname` in the PageShell header.
-  - Injected subtle indigo radial gradients to give the background of the landing page and page wrapper a modern, polished look without being overly busy.
-- **Interactive Tri-state Predictions**: 
-  - Added a **"Pass"** choice in the prediction form. User selections default to unselected (`null`) and any skipped rules are omitted from the array sent to the backend, preventing neutral default predictions from being evaluated as incorrect.
-- **Prediction Scorecards with Match Results**: 
-  - Created a detailed scorecard view for members on the event page. It compares their predictions (Yes, No, or Passed) directly against recorded match values, showing clear correctness status and points earned.
-- **Dynamic Results Recording**: Replaced the raw JSON textarea with labeled numeric inputs dynamically generated for every player + metric combination in the event rules.
+- **WebSocket Real-time Leaderboard Updates**:
+  - **Backend (NestJS)**: Installed dependencies (`@nestjs/websockets`, `@nestjs/platform-socket.io`, `socket.io`). Implemented `LeaderboardGateway` (`src/module/leaderboard/leaderboard.gateway.ts`) handling connection authentication using Better Auth token queries, room subscriptions (`group_${groupId}`), and a push broadcast handler. Registered it in `LeaderboardModule`.
+  - **Global Guard Compatibility**: Updated `GroupRoleGuard` to check `context.getType() === 'http'` and bypass WebSocket handshakes/events, avoiding injection crashes.
+  - **Recalculation Push**: Configured `LeaderboardConsumer.updateLeaderboard` to broadcast recomputed standings directly via the gateway.
+  - **Frontend (Next.js)**: Installed `socket.io-client`. Integrated a Socket.io listener inside the client group details page (`src/app/groups/[id]/page.tsx`) that joins the group room and dynamically refreshes the leaderboard state upon receipt of `leaderboardUpdated` events.
+- **Academic Report Chapters 4 and 5**: Generated chapters under `project_report_chapters_4_5.md` detailing the development stack, security architectures, Kafka event loop execution flow, WebSocket real-time pushes, and Jest testing summaries.
+- **Gitignore Exclusions**: Configured `.gitignore` files for client and server to exclude report files, agents instructions, memory modules, and custom skills folders.
 
 ## Decisions made
-- Updated backend `EventsService.findOne` to include the event's recorded results (`results: true`) in the query payload so the frontend has access to match statistics.
-- Added a PATCH `/events/:id` route to update event parameters (name, description, startsAt, status) on the NestJS backend.
-- Filtered out unselected prediction rules (where selection is `null` or `undefined`) on the client before forwarding to the backend `/predictions` endpoint.
-- Corrected frontend types (`Prediction.selections` and `CreatePredictionDto.selections`) to match the backend database array structure.
+- Handshake token authentication: Extracted Better Auth Bearer tokens from incoming WebSocket handshakes to validate client identity via `authService.api.getSession` prior to room subscription.
+- Room isolation: Segregated client socket connections inside virtual rooms named `group_${groupId}` so standings updates are broadcast only to active members of the target group.
+- Global mock modules in test: Created a global `MockAuthModule` in `scoring-flow.integration.spec.ts` to satisfy compiler-time dependency injections for AuthService in test suites without pulling in actual ESM modules.
+- Check server initialization: Added a safety check on `gateway.server` in `emitLeaderboardUpdate` to prevent null pointer exceptions during unit/integration tests.
 
 ## Problems solved
-- Fixed double-declaration errors in `button.tsx` and `input.tsx`.
-- Resolved hook-ordering warnings by restructuring early returns.
-- Fixed authentication loop/flicker where unauthenticated components mounted and requested data before page shell redirection occurred.
-- Resolved typecheck compile errors in backend Jest specs (`events.controller.spec.ts`, `events.service.spec.ts`, and `scoring-flow.integration.spec.ts`) by mocking the group member relationship and adjusting the results payload schema to be a nested record instead of an array.
+- Solved WebSocket compiler and runtime test suite failures: Mocked AuthService globally inside integration tests and bypassed global guards on non-HTTP contexts.
+- Avoided layout flickering: Checked authenticating tokens on client-side route mounts inside a unified PageShell loading container.
+- Resolved skipped prediction grading: Filtered out null selection payloads before predictions submission, treating abstentions as non-penalizing "Passes".
 
 ## Current state
-- Both frontend and backend compile completely clean with 0 warnings or errors.
-- All backend test suites and integration flows pass successfully.
+- The client and server codebases compile clean with 0 warnings.
+- All backend unit tests and event-driven scoring integration tests execute and pass successfully (8 suites, 18 specs).
+- Real-time WebSockets bindings are fully integrated and functional.
+
+## Next session starts with
+- Add matching visual diagrams or screenshots to placeholders in the project report.
+- Implement real-time notifications for event activations or match results using the same WebSockets gateway.
+
+## Open questions
+- None for the current session.
