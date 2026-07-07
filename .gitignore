@@ -39,3 +39,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# AI Agents & Reports
+/project_report_chapters_4_5.md
+/AGENTS.md
+/memory.md
+/.agents/
+
