@@ -1,35 +1,77 @@
-# Memory — Project Report Drafting & WebSocket Real-time Standings
+# Memory — Heroku Deployment & Dissertation Appendix Compilation
 
-Last updated: 2026-07-07T13:17:00+01:00
+Last updated: 2026-07-09T14:15:00+01:00
 
 ## What was built
-- **WebSocket Real-time Leaderboard Updates**:
-  - **Backend (NestJS)**: Installed dependencies (`@nestjs/websockets`, `@nestjs/platform-socket.io`, `socket.io`). Implemented `LeaderboardGateway` (`src/module/leaderboard/leaderboard.gateway.ts`) handling connection authentication using Better Auth token queries, room subscriptions (`group_${groupId}`), and a push broadcast handler. Registered it in `LeaderboardModule`.
-  - **Global Guard Compatibility**: Updated `GroupRoleGuard` to check `context.getType() === 'http'` and bypass WebSocket handshakes/events, avoiding injection crashes.
-  - **Recalculation Push**: Configured `LeaderboardConsumer.updateLeaderboard` to broadcast recomputed standings directly via the gateway.
-  - **Frontend (Next.js)**: Installed `socket.io-client`. Integrated a Socket.io listener inside the client group details page (`src/app/groups/[id]/page.tsx`) that joins the group room and dynamically refreshes the leaderboard state upon receipt of `leaderboardUpdated` events.
-- **Academic Report Chapters 4 and 5**: Generated chapters under `project_report_chapters_4_5.md` detailing the development stack, security architectures, Kafka event loop execution flow, WebSocket real-time pushes, and Jest testing summaries.
-- **Gitignore Exclusions**: Configured `.gitignore` files for client and server to exclude report files, agents instructions, memory modules, and custom skills folders.
+- **Backend Heroku Setup**:
+  - Configured `package.json` to generate the Prisma client before building NestJS (`prisma generate && nest build`) and updated production start script.
+  - Created backend `Procfile` running NestJS in production (`web: npm run start:prod`).
+  - Added SSL support to `KafkaService` for connecting to Apache Kafka on Heroku using certificates (`KAFKA_TRUSTED_CERT`, `KAFKA_CLIENT_CERT`, `KAFKA_CLIENT_CERT_KEY`).
+  - Added dynamic topic and consumer group prefixing using `KAFKA_PREFIX` (mandatory for Heroku Basic multi-tenant plans).
+  - Adjusted topic creation replication factor dynamically (defaulting to 3 on Heroku SSL, 1 locally) and caught Admin API topic creation errors safely to prevent boot crashes.
+- **Frontend Heroku Setup**:
+  - Created frontend `Procfile` specifying dynamic port binding (`web: npx next start -p $PORT`).
+- **Dissertation Appendix compilation**:
+  - Captured 9 screenshots of major user routes (Landing Page, Register Page, Dashboard, Profile, Group Creation, Admin Group Page, Rule/Event Details, Join Group, and Event Predictions).
+  - Drafted comprehensive master's thesis dissertation Appendix in academic LaTeX style containing Appendices A to I.
+  - Written to `/Users/shredder/.gemini/antigravity-ide/brain/5ad89651-d4c6-474c-b05e-4cb343515619/project_appendix.md`.
 
 ## Decisions made
-- Handshake token authentication: Extracted Better Auth Bearer tokens from incoming WebSocket handshakes to validate client identity via `authService.api.getSession` prior to room subscription.
-- Room isolation: Segregated client socket connections inside virtual rooms named `group_${groupId}` so standings updates are broadcast only to active members of the target group.
-- Global mock modules in test: Created a global `MockAuthModule` in `scoring-flow.integration.spec.ts` to satisfy compiler-time dependency injections for AuthService in test suites without pulling in actual ESM modules.
-- Check server initialization: Added a safety check on `gateway.server` in `emitLeaderboardUpdate` to prevent null pointer exceptions during unit/integration tests.
+- Removed database migration from release phase: The database is hosted on Prisma Cloud (`db.prisma.io`) and is already active and populated, rendering `prisma migrate deploy` unnecessary since there are no local migration files in this repository.
+- Kept image references relative within the artifacts directory to ensure high-fidelity import compatibility with Google Docs.
 
 ## Problems solved
-- Solved WebSocket compiler and runtime test suite failures: Mocked AuthService globally inside integration tests and bypassed global guards on non-HTTP contexts.
-- Avoided layout flickering: Checked authenticating tokens on client-side route mounts inside a unified PageShell loading container.
-- Resolved skipped prediction grading: Filtered out null selection payloads before predictions submission, treating abstentions as non-penalizing "Passes".
+- Solved missing `dist/main` crash: Adjusted the `start:prod` script to point to `dist/src/main` since the TypeScript compiler preserves the `src/` directory structure.
+- Solved browser subagent scratchpad read failures by running a clean session and mapping direct routes.
 
 ## Current state
-- The client and server codebases compile clean with 0 warnings.
-- All backend unit tests and event-driven scoring integration tests execute and pass successfully (8 suites, 18 specs).
-- Real-time WebSockets bindings are fully integrated and functional.
+- The backend and frontend apps are deployed on Heroku, but have been scaled down to `0` dynos to preserve credits.
+- The Heroku Kafka add-on has been destroyed to stop all billing charges.
+- The entire dissertation Appendix package is complete.
 
 ## Next session starts with
-- Add matching visual diagrams or screenshots to placeholders in the project report.
-- Implement real-time notifications for event activations or match results using the same WebSockets gateway.
+- Re-provision the Kafka add-on and re-create topics/consumer group using the **Kafka Recreation Protocol** below.
+- Scale backend and frontend dynos back up to `1` using `npx heroku ps:scale web=1`.
+- Verify socket connection dynamically in the UI and test production workflow actions (register, login, join group, submit prediction).
+- Configure SSL certificate verification if custom domain names are added.
+
+## Kafka Recreation Protocol (Do Not Overwrite)
+If the Kafka add-on is destroyed to save credits, use these exact commands to provision it and recreate all topics and groups:
+
+1. **Provision the Kafka addon**:
+   ```bash
+   npx heroku addons:create heroku-kafka:basic-0 -a <backend-app-name>
+   ```
+   Wait for the addon to transition to the `created` state (check with `npx heroku addons:info <addon-name>`).
+
+2. **Retrieve the auto-generated prefix**:
+   ```bash
+   npx heroku config:get KAFKA_PREFIX -a <backend-app-name>
+   ```
+   *(e.g., `colorado-85695.`)*
+
+3. **Install the CLI plugin (if not present)**:
+   ```bash
+   npx heroku plugins:install heroku-kafka
+   ```
+
+4. **Create the 4 required namespaced topics** (replace `<prefix>` with your retrieved prefix):
+   ```bash
+   npx heroku kafka:topics:create <prefix>prediction.submitted -a <backend-app-name>
+   npx heroku kafka:topics:create <prefix>result.recorded -a <backend-app-name>
+   npx heroku kafka:topics:create <prefix>score.computed -a <backend-app-name>
+   npx heroku kafka:topics:create <prefix>leaderboard.updated -a <backend-app-name>
+   ```
+
+5. **Create the consumer group** (replace `<prefix>` with your retrieved prefix):
+   ```bash
+   npx heroku kafka:consumer-groups:create <prefix>fantasy-league-group -a <backend-app-name>
+   ```
+
+6. **Restart backend dynos**:
+   ```bash
+   npx heroku ps:restart -a <backend-app-name>
+   ```
 
 ## Open questions
-- None for the current session.
+- None.
