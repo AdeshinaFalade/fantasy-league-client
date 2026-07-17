@@ -483,8 +483,10 @@ export default function EventDetailPage() {
                                                     conditionMet = evaluateCondition(rule.condition, Number(actualValue), Number(rule.threshold));
                                                 }
 
-                                                const isCorrect = selection !== undefined && conditionMet !== null && choice === conditionMet;
-                                                const isIncorrect = selection !== undefined && conditionMet !== null && choice !== conditionMet;
+                                                // Only a committed "Yes" (true) can score — skipped rules always earn 0
+                                                const committed = choice === true;
+                                                const isCorrect = committed && conditionMet === true;
+                                                const isWrongCall = committed && conditionMet === false;
 
                                                 return (
                                                     <div key={rule.id} className="rounded-xl border border-slate-200 p-4 bg-white text-sm space-y-3 shadow-sm">
@@ -502,11 +504,9 @@ export default function EventDetailPage() {
                                                             <div>
                                                                 <span className="text-slate-400">Your Prediction:</span>
                                                                 <span className={`ml-1.5 font-bold uppercase ${
-                                                                    choice === true ? 'text-green-600' :
-                                                                    choice === false ? 'text-red-600' :
-                                                                    'text-slate-500'
+                                                                    choice === true ? 'text-green-600' : 'text-slate-400'
                                                                 }`}>
-                                                                    {choice === true ? 'Yes' : choice === false ? 'No' : 'Passed'}
+                                                                    {choice === true ? 'Yes' : 'Skipped'}
                                                                 </span>
                                                             </div>
                                                             {actualValue !== undefined && actualValue !== null ? (
@@ -531,13 +531,13 @@ export default function EventDetailPage() {
                                                                     <span className="font-bold text-green-700 bg-green-50 px-2.5 py-0.5 rounded-full border border-green-200">
                                                                         ✅ Correct (+{rule.score} pts)
                                                                     </span>
-                                                                ) : isIncorrect ? (
+                                                                ) : isWrongCall ? (
                                                                     <span className="font-bold text-red-700 bg-red-50 px-2.5 py-0.5 rounded-full border border-red-200">
-                                                                        ❌ Incorrect (0 pts)
+                                                                        ❌ Wrong call (0 pts)
                                                                     </span>
                                                                 ) : (
                                                                     <span className="font-bold text-slate-600 bg-slate-50 px-2.5 py-0.5 rounded-full border border-slate-200">
-                                                                        ➖ Passed (0 pts)
+                                                                        ➖ Skipped (0 pts)
                                                                     </span>
                                                                 )}
                                                             </div>
@@ -559,10 +559,21 @@ export default function EventDetailPage() {
                                                         <div className="flex gap-2">
                                                             <button
                                                                 type="button"
-                                                                onClick={() => setPredictionSelections((curr) => ({ ...curr, [rule.id]: true }))}
+                                                                onClick={() => {
+                                                                    const conflictingIds = rules
+                                                                        .filter((r) => r.id !== rule.id && r.player === rule.player && r.metric === rule.metric)
+                                                                        .map((r) => r.id);
+                                                                    setPredictionSelections((curr) => {
+                                                                        const next = { ...curr, [rule.id]: true };
+                                                                        for (const id of conflictingIds) {
+                                                                            if (next[id] === true) next[id] = null;
+                                                                        }
+                                                                        return next;
+                                                                    });
+                                                                }}
                                                                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold border transition ${
                                                                     predictionSelections[rule.id] === true
-                                                                        ? 'bg-blue-600 text-white border-blue-600 font-bold shadow-sm'
+                                                                        ? 'bg-green-600 text-white border-green-600 font-bold shadow-sm'
                                                                         : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                                                                 }`}
                                                             >
@@ -570,25 +581,14 @@ export default function EventDetailPage() {
                                                             </button>
                                                             <button
                                                                 type="button"
-                                                                onClick={() => setPredictionSelections((curr) => ({ ...curr, [rule.id]: false }))}
-                                                                className={`rounded-lg px-3 py-1.5 text-xs font-semibold border transition ${
-                                                                    predictionSelections[rule.id] === false
-                                                                        ? 'bg-red-600 text-white border-red-600 font-bold shadow-sm'
-                                                                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                                                                }`}
-                                                            >
-                                                                No
-                                                            </button>
-                                                            <button
-                                                                type="button"
                                                                 onClick={() => setPredictionSelections((curr) => ({ ...curr, [rule.id]: null }))}
                                                                 className={`rounded-lg px-3 py-1.5 text-xs font-semibold border transition ${
                                                                     predictionSelections[rule.id] === null || predictionSelections[rule.id] === undefined
-                                                                        ? 'bg-slate-600 text-white border-slate-600 font-bold shadow-sm'
+                                                                        ? 'bg-slate-500 text-white border-slate-500 font-bold shadow-sm'
                                                                         : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                                                                 }`}
                                                             >
-                                                                Pass
+                                                                Skip
                                                             </button>
                                                         </div>
                                                     </div>
